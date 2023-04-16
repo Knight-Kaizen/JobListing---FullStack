@@ -1,16 +1,18 @@
 const express = require('express');
 const mongoose = require('mongoose');
+const dotenv = require('dotenv');
 
 
 
 const app = express();
+dotenv.config();
 
 
 
 
 //---------------MongoDB connection----------------
-const url = "phrh.mongodb.net/?retryWrites=true&w=majority";
-mongoose.connect(url, {
+
+mongoose.connect(process.env.MONGOOSE_URI, {
     useNewUrlParser: true,
     useUnifiedTopology: true
 })
