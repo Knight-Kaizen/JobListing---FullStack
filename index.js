@@ -15,7 +15,7 @@ app.use(bodyParser.json());
 //-----------------Middleware-------------------------
 
 //-----------Error handler if route is not found
-            // It is not working, check with Ishar
+// It is not working, check with Ishar
 // app.use((req, res, next)=>{
 //     res.status(404)
 //     res.send({
@@ -51,6 +51,25 @@ const validateUser = async (req, res, next) => {
         console.log('error in validateUser: ', err);
     }
 }
+
+//-------------------Token verification middleware
+const verifyToken = async (req, res, next) => {
+    const token = req.body.token;
+    if (!token)
+        res.status(400).send('Token not received');
+    else {
+
+        try {
+            const decodedToken = await jwt.verify(token, process.env.TOKEN_KEY);
+            console.log('decoded token: ', decodedToken);
+            next();
+        }
+        catch (err) {
+            console.log('Error in verifyToken', err);
+            res.send('Error in Verification');
+        }
+    }
+}
 //---------------------------------------
 
 
@@ -78,18 +97,45 @@ const jobDetailsSchema = new mongoose.Schema({
     company_name: String,
     logo_url: String,
     job_position: String,   //Frontend/Backend/Fullstack
-    monthly_salary: String,
+    monthly_salary: Number,
     job_type: String,       //full-time/part-time/internship
     remote_office: String, //remote/office/hybrid
     location: String,    //only city name required
     job_description: String,
     company_description: String,
-    skills_required: String //seperated by ','
+    skills_required: String, //seperated by ','
+    company_size: String
 })
-// const jobDetailCollection = new mongoose.model("userDetailCollection", userSchema);
+const jobDetailCollection = new mongoose.model("jobDetailCollection", jobDetailsSchema);
 //------------------------------------------------------
 
 //---------------Helper Functions-----------------------
+
+const postJob = async (jobDetailObj) => {
+    try {
+        const newJob = new jobDetailCollection({
+            company_name: jobDetailObj.company_name,
+            logo_url: jobDetailObj.logo_url,
+            job_position: jobDetailObj.job_position,
+            monthly_salary: jobDetailObj.monthly_salary,
+            job_type: jobDetailObj.job_type,
+            remote_office: jobDetailObj.remote_office,
+            location: jobDetailObj.location,
+            job_description: jobDetailObj.job_description,
+            company_description: jobDetailObj.company_description,
+            skills_required: jobDetailObj.skills_required, //seperated by ','
+            company_size: jobDetailObj.company_size
+
+        })
+
+        const result = await newJob.save();
+        return true;
+    }
+    catch (err) {
+        console.log('Error while posting a job ', (err));
+        return false;
+    }
+}
 
 const generateToken = async (userDetailObj) => {
     try {
@@ -99,7 +145,7 @@ const generateToken = async (userDetailObj) => {
             { user_id: user._id, email },
             process.env.TOKEN_KEY,
             {
-                expiresIn: "2h",
+                expiresIn: "1h",
             }
         );
         return token;
@@ -162,9 +208,11 @@ const createUser = async (userDetail) => {
         })
 
         const result = await newUser.save();
+        return true;
     }
     catch (err) {
         console.log('error in creating new user', err);
+        return false;
     }
 };
 //------------------------------------------------------
@@ -186,8 +234,8 @@ app.post('/register', validateUser, (req, res) => {
 //---------LoginRoute
 app.post('/login', async (req, res) => {
     try {
-        const {email, password} = req.body;
-        if(!email || !password){
+        const { email, password } = req.body;
+        if (!email || !password) {
             res.send('Empty user inputs!');
         }
         const checkUserExist = await checkIfUserAlreadyExist(req.body);
@@ -201,7 +249,7 @@ app.post('/login', async (req, res) => {
                 res.send(token);
             }
             else {
-                res.send('Wrong Email or Password!');
+                res.status(400).send('Wrong Email or Password!');
             }
         }
         else {
@@ -213,6 +261,19 @@ app.post('/login', async (req, res) => {
         console.log('Error in POST login route', err);
     }
 
+})
+//------------Protected Route for Job posting
+app.post('/jobpost', verifyToken, async (req, res) => {
+    console.log('You can post job now!');
+    const jobPosted = await postJob(req.body);
+    if (jobPosted) {
+        res.send('Job posted successfully');
+        console.log('Job posted successfully!');
+    }
+    else {
+        res.status(400).send('Job posting failed');
+        console.log('Job posting failed');
+    }
 })
 
 //---------------------------------------------------------
