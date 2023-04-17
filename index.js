@@ -12,6 +12,46 @@ app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 
 
+//-----------------Middleware-------------------------
+
+//-----------Error handler if route is not found
+            // It is not working, check with Ishar
+// app.use((req, res, next)=>{
+//     res.status(404)
+//     res.send({
+//         error: "Page not found"
+//     });
+// });
+
+//-----------Custom middleware for validating user
+const validateUser = async (req, res, next) => {
+    try {
+        //check for name, email, mobile and password.
+        //Since we will be having onwe will valily one user date if the user is dup licate or notby email & mobile
+        console.log("validateUser ", req.body);
+        const { name, email, mobile, password } = req.body;
+        if (!name || !email || !mobile || !password) {
+            console.log('Empty input feilds');
+            res.status(400).send('Empty Input Feilds');
+        }
+        //Check redundancy
+        const isEmailExist = await userDetailCollection.findOne({ email });
+        const ismobileExist = await userDetailCollection.findOne({ mobile });
+
+
+        if (isEmailExist || ismobileExist) {
+            res.status(400).send('Mobile or Email already exists!');
+            console.log("data redundancy found");
+        }
+        else {
+            next();
+        }
+    }
+    catch (err) {
+        console.log('error in validateUser: ', err);
+    }
+}
+//---------------------------------------
 
 
 //---------------MongoDB----------------
@@ -108,34 +148,7 @@ const checkIfUserAlreadyExist = async (userDetailObj) => {
 
 }
 
-//Custom middleware for validating user
-const validateUser = async (req, res, next) => {
-    try {
-        //check for name, email, mobile and password.
-        //Since we will be having onwe will valily one user date if the user is dup licate or notby email & mobile
-        console.log("validateUser ", req.body);
-        const { name, email, mobile, password } = req.body;
-        if (!name || !email || !mobile || !password) {
-            console.log('Empty input feilds');
-            res.status(400).send('Empty Input Feilds');
-        }
-        //Check redundancy
-        const isEmailExist = await userDetailCollection.findOne({ email });
-        const ismobileExist = await userDetailCollection.findOne({ mobile });
 
-
-        if (isEmailExist || ismobileExist) {
-            res.status(400).send('Mobile or Email already exists!');
-            console.log("data redundancy found");
-        }
-        else {
-            next();
-        }
-    }
-    catch (err) {
-        console.log('error in validateUser: ', err);
-    }
-}
 
 const createUser = async (userDetail) => {
     try {
@@ -173,6 +186,10 @@ app.post('/register', validateUser, (req, res) => {
 //---------LoginRoute
 app.post('/login', async (req, res) => {
     try {
+        const {email, password} = req.body;
+        if(!email || !password){
+            res.send('Empty user inputs!');
+        }
         const checkUserExist = await checkIfUserAlreadyExist(req.body);
         if (checkUserExist) {
             console.log('Welcome to login page');
