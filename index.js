@@ -103,13 +103,26 @@ const jobDetailsSchema = new mongoose.Schema({
     location: String,    //only city name required
     job_description: String,
     company_description: String,
-    skills_required: String, //seperated by ','
+    skills_required: [], //seperated by ','
     company_size: String
 })
 const jobDetailCollection = new mongoose.model("jobDetailCollection", jobDetailsSchema);
 //------------------------------------------------------
 
 //---------------Helper Functions-----------------------
+
+const getAllJobs = async () => {
+    try {
+        const result = await jobDetailCollection.find();
+        console.log(result);
+        return result;
+    }
+    catch (err) {
+        console.log('Error in fetching jobs', err);
+        return false;
+    }
+
+}
 
 const postJob = async (jobDetailObj) => {
     try {
@@ -263,7 +276,7 @@ app.post('/login', async (req, res) => {
 
 })
 //------------Protected Route for Job posting
-app.post('/jobpost', verifyToken, async (req, res) => {
+app.post('/job', verifyToken, async (req, res) => {
     console.log('You can post job now!');
     const jobPosted = await postJob(req.body);
     if (jobPosted) {
@@ -273,6 +286,18 @@ app.post('/jobpost', verifyToken, async (req, res) => {
     else {
         res.status(400).send('Job posting failed');
         console.log('Job posting failed');
+    }
+})
+
+//----------Route for viewing Jobs
+app.get('/job', async (req, res) => {
+    //if query absent -> view all jobs 
+    const alljobs = await getAllJobs();
+    if(alljobs){
+        res.send(alljobs);
+    }
+    else{
+        res.send('Error in fetching jobs');
     }
 })
 
