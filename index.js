@@ -111,11 +111,32 @@ const jobDetailCollection = new mongoose.model("jobDetailCollection", jobDetails
 
 //---------------Helper Functions-----------------------
 
-const getAllJobs = async () => {
+const getAllJobs = async (query) => {
     try {
-        const result = await jobDetailCollection.find();
-        console.log(result);
-        return result;
+        if (Object.keys(query).length == 0) {
+            const result = await jobDetailCollection.find();
+            return result;
+        }
+        else {
+            const searchOnSkills = 'skills_required' in query;
+            const searchOnJobTitle = 'job_position' in query;
+            if (searchOnJobTitle) { //search based on job title
+                const result = await jobDetailCollection.find(query);
+                return result;
+            }
+            else if (searchOnSkills) { // search based on required skills
+                console.log(query['skills_required']);
+                const result = await jobDetailCollection.find({
+                    'skills_required': {
+                        $in: query['skills_required']
+                    }
+                })
+                return result;
+            }
+        }/* 
+        mongoose.find({skills: {$in: ['html', 'css']}})
+        */
+       
     }
     catch (err) {
         console.log('Error in fetching jobs', err);
@@ -123,6 +144,7 @@ const getAllJobs = async () => {
     }
 
 }
+
 
 const postJob = async (jobDetailObj) => {
     try {
@@ -292,13 +314,20 @@ app.post('/job', verifyToken, async (req, res) => {
 //----------Route for viewing Jobs
 app.get('/job', async (req, res) => {
     //if query absent -> view all jobs 
-    const alljobs = await getAllJobs();
-    if(alljobs){
-        res.send(alljobs);
+    try {
+        console.log('in get job route', req.query);
+        const alljobs = await getAllJobs(req.query);
+        if (alljobs) {
+            res.send(alljobs);
+        }
+        else {
+            res.send('Error in fetching jobs');
+        }
     }
-    else{
-        res.send('Error in fetching jobs');
+    catch (err) {
+        console.log('Error in get Job route', err);
     }
+
 })
 
 //---------------------------------------------------------
