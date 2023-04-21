@@ -104,12 +104,43 @@ const jobDetailsSchema = new mongoose.Schema({
     job_description: String,
     company_description: String,
     skills_required: [], //seperated by ','
-    company_size: String
+    company_size: String,
+    recruiter_id: String
 })
 const jobDetailCollection = new mongoose.model("jobDetailCollection", jobDetailsSchema);
 //------------------------------------------------------
 
 //---------------Helper Functions-----------------------
+
+const getRecruiterDetails = async(userDetailObj)=>{
+    const {email} = userDetailObj;
+    const user = await userDetailCollection.findOne({email});
+    console.log(user);
+    return user;
+}
+
+const editJobDetails = async (req) => {
+    try {
+        const newDetails = req.body;
+        // console.log(newDetails);
+        const jobId = req.params.id;
+        await jobDetailCollection.updateOne({ _id: jobId }, {
+            $set: {
+                job_position: newDetails.job_position,   //Frontend/Backend/Fullstack
+                monthly_salary: newDetails.monthly_salary,
+                job_type: newDetails.job_type,       //full-time/part-time/internship
+                remote_office: newDetails.remote_office, //remote/office/hybrid
+                location: newDetails.location,    //only city name required
+                job_description: newDetails.job_description,
+                skills_required: newDetails.skills_required, //seperated by ','
+            }
+        })
+        return true;
+    } catch (err) {
+        console.log('error in updating job', err);
+        return false
+    }
+}
 
 const getAllJobs = async (query) => {
     try {
@@ -120,7 +151,26 @@ const getAllJobs = async (query) => {
         else {
             const searchOnSkills = 'skills_required' in query;
             const searchOnJobTitle = 'job_position' in query;
-            if (searchOnJobTitle) { //search based on job title
+            // console.log('Combined Query: ', query);
+            // search based on job title AND skills
+            if (searchOnJobTitle && searchOnSkills) {
+                const result = await jobDetailCollection.find({
+                    $and: [
+                        {
+                            'job_position': {
+                                $eq: query['job_position']
+                            }
+                        },
+                        {
+                            'skills_required': {
+                                $in: query['skills_required']
+                            }
+                        }
+                    ]
+                })
+                return result;
+            }
+            else if (searchOnJobTitle) { //search based on job title
                 const result = await jobDetailCollection.find(query);
                 return result;
             }
@@ -133,10 +183,7 @@ const getAllJobs = async (query) => {
                 })
                 return result;
             }
-        }/* 
-        mongoose.find({skills: {$in: ['html', 'css']}})
-        */
-       
+        }
     }
     catch (err) {
         console.log('Error in fetching jobs', err);
@@ -150,6 +197,7 @@ const postJob = async (jobDetailObj) => {
     try {
         const newJob = new jobDetailCollection({
             company_name: jobDetailObj.company_name,
+            recruiter_id: jobDetailObj.recruiter_id,
             logo_url: jobDetailObj.logo_url,
             job_position: jobDetailObj.job_position,
             monthly_salary: jobDetailObj.monthly_salary,
@@ -217,6 +265,7 @@ const checkIfUserAlreadyExist = async (userDetailObj) => {
         const ismobileExist = await userDetailCollection.findOne({ mobile });
 
         if (isEmailExist && ismobileExist) {
+
             // console.log('User Already exist');
             return true;
         }
@@ -241,7 +290,6 @@ const createUser = async (userDetail) => {
             password: encryptedPassword
 
         })
-
         const result = await newUser.save();
         return true;
     }
@@ -281,7 +329,14 @@ app.post('/login', async (req, res) => {
                 console.log('Genrating token');
                 const token = await generateToken(req.body);
                 console.log('User sucessfully logged in!');
-                res.send(token);
+                console.log('User logged in sucessfully, view job page');
+                const recruiterdetails = await getRecruiterDetails(req.body);
+                const {name, _id} = recruiterdetails;
+                res.send({
+                    _id,
+                    name,
+                    token
+                });
             }
             else {
                 res.status(400).send('Wrong Email or Password!');
@@ -328,6 +383,28 @@ app.get('/job', async (req, res) => {
         console.log('Error in get Job route', err);
     }
 
+})
+app.get('/view/:id', async (req, res) => {
+    try {
+        const result = await jobDetailCollection.findById(req.params.id);
+        res.send(result);
+        // console.log('in job detail view page', result);
+    }
+    catch (err) {
+        console.log('Error in fetching job ', (err));
+    }
+})
+app.patch('/edit/:id', async (req, res) => {
+    try {
+        const result = await editJobDetails(req);
+        if (result)
+            res.send('Job details updated');
+        else
+            res.status(400).send('Failed to update job details');
+    }
+    catch (err) {
+        console.log('Error in editing job', err);
+    }
 })
 
 //---------------------------------------------------------
