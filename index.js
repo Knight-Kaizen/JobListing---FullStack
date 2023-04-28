@@ -4,12 +4,16 @@ const dotenv = require('dotenv');
 const bodyParser = require('body-parser');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
+const cors = require('cors');
 
 
 const app = express();
 dotenv.config();
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
+app.use(cors({
+    origin: "http://localhost:3000"
+}))
 
 
 //-----------------Middleware-------------------------
@@ -146,12 +150,13 @@ const getAllJobs = async (query) => {
     try {
         if (Object.keys(query).length == 0) {
             const result = await jobDetailCollection.find();
+            console.log('Searched without query');
             return result;
         }
         else {
             const searchOnSkills = 'skills_required' in query;
             const searchOnJobTitle = 'job_position' in query;
-            // console.log('Combined Query: ', query);
+            console.log('Combined Query: ', query);
             // search based on job title AND skills
             if (searchOnJobTitle && searchOnSkills) {
                 const result = await jobDetailCollection.find({
@@ -172,10 +177,11 @@ const getAllJobs = async (query) => {
             }
             else if (searchOnJobTitle) { //search based on job title
                 const result = await jobDetailCollection.find(query);
+                console.log('Search based on position');
                 return result;
             }
             else if (searchOnSkills) { // search based on required skills
-                console.log(query['skills_required']);
+                console.log('search based on skills', query['skills_required']);
                 const result = await jobDetailCollection.find({
                     'skills_required': {
                         $in: query['skills_required']
@@ -321,8 +327,8 @@ app.post('/login', async (req, res) => {
         if (!email || !password) {
             res.send('Empty user inputs!');
         }
-        const checkUserExist = await checkIfUserAlreadyExist(req.body);
-        if (checkUserExist) {
+        const isEmailExist = await userDetailCollection.findOne({ email });
+        if (isEmailExist) {
             console.log('Welcome to login page');
             const detailsOK = await matchCredentials(req.body);
             if (detailsOK) {
