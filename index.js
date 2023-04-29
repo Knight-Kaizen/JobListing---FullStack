@@ -58,7 +58,10 @@ const validateUser = async (req, res, next) => {
 
 //-------------------Token verification middleware
 const verifyToken = async (req, res, next) => {
-    const token = req.body.token;
+    const token = req.headers.authorization;
+    // console.log('this is req', req.body);
+    // const token = tokenString.slice(7)
+    console.log('this is token received',token);
     if (!token)
         res.status(400).send('Token not received');
     else {
@@ -201,6 +204,7 @@ const getAllJobs = async (query) => {
 
 const postJob = async (jobDetailObj) => {
     try {
+        console.log('In job post function ', jobDetailObj);
         const newJob = new jobDetailCollection({
             company_name: jobDetailObj.company_name,
             recruiter_id: jobDetailObj.recruiter_id,
@@ -361,7 +365,7 @@ app.post('/login', async (req, res) => {
 //------------Protected Route for Job posting
 app.post('/job', verifyToken, async (req, res) => {
     console.log('You can post job now!');
-    const jobPosted = await postJob(req.body);
+    const jobPosted = await postJob(req.body.data.jobDetails);
     if (jobPosted) {
         res.send('Job posted successfully');
         console.log('Job posted successfully!');
