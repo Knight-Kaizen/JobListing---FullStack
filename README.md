@@ -18,6 +18,11 @@
 - Enviornment variables: To hide sensitive data in source code.
 - Error Handling: Handled errors on different stages and sending appropriate responses with 400 as status code.
 
+## How to run it locally
+- Clone this repo to your machine.
+- Install node packages using `npm i`.
+- Set enviornment variables - `MONGOOSE_URI` and `TOKEN_KEY` for jwt signing and verification.
+- run using `npm start`.
 
 ## API Documentation
 Will write API documentation later on so it can be tested out on tools like POSTMAN.
