@@ -23,7 +23,7 @@ const validateUser = async (req, res, next) => {
         }
     }
     catch (err) {
-        res.send(`Error in validating user, ${err}`);
+        res.status(400).send(`Error in validating user, ${err}`);
     }
 }
 
@@ -41,7 +41,7 @@ const createUser = async(req, res)=>{
         res.send('User registered sucessfully! Head on to login page');
     }
     catch(err){
-        res.send(`Error in creating user, ${err}`);
+        res.status(400).send(`Error in creating user, ${err}`);
     }
 }
 
@@ -50,16 +50,14 @@ const matchCredentials = async (userDetailObj) => {
         const { email, password } = userDetailObj;
         const user = await userDetailCollection.findOne({ email });
         if (user && await (bcrypt.compare(password, user.password))) {
-            console.log('Credentials matched');
             return true;
         }
         else {
-            console.log('Wrong Credentials!');
             return false;
         }
     }
     catch (err) {
-        console.error('Error in matchCredentials Helper', err);
+        // console.error('Error in matchCredentials Helper', err);
     }
 
 
@@ -78,7 +76,7 @@ const generateToken = async (userDetailObj) => {
         return token;
     }
     catch (err) {
-        console.log('error in generating token: ', err);
+        // console.log('error in generating token: ', err);
     }
 }
 const getRecruiterDetails = async(userDetailObj)=>{
@@ -95,13 +93,9 @@ const loginUser = async(req, res)=>{
         }
         const isEmailExist = await userDetailCollection.findOne({ email });
         if (isEmailExist) {
-            console.log('Welcome to login page');
             const detailsOK = await matchCredentials(req.body);
             if (detailsOK) {
-                console.log('Genrating token');
                 const token = await generateToken(req.body);
-                console.log('User sucessfully logged in!');
-                console.log('User logged in sucessfully, view job page');
                 const recruiterdetails = await getRecruiterDetails(req.body);
                 const {name, _id} = recruiterdetails;
                 res.send({
@@ -119,7 +113,7 @@ const loginUser = async(req, res)=>{
         }
     }
     catch(err){
-        res.send(`Error in login user: ${err}`);
+        res.status(400).send(`Error in login user: ${err}`);
     }
 }
 

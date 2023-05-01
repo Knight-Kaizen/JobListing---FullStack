@@ -15,7 +15,7 @@ const verifyToken = async (req, res, next) => {
             next();
         }
         catch (err) {
-            res.send('Error in Verification');
+            res.status(400).send('Error in Verification');
         }
     }
 }
@@ -57,7 +57,7 @@ const createJob = async (req, res) => {
         }
     }
     catch (err) {
-        res.send(`Error in create Job: ${err}`);
+        res.status(400).send(`Error in create Job: ${err}`);
     }
 }
 
@@ -119,7 +119,7 @@ const viewJobs = async (req, res) => {
         }
     }
     catch (err) {
-        res.send(`Error in view jobs: ${err}`);
+        res.status(400).send(`Error in view jobs: ${err}`);
     }
 }
 
@@ -129,13 +129,12 @@ const viewJobById = async (req, res) => {
         res.send(result);
     }
     catch (err) {
-        res.send(`Error in view job by ID: ${err}`);
+        res.status(400).send(`Error in view job by ID: ${err}`);
     }
 }
 const editJobDetails = async (req) => {
     try {
         const newDetails = req.body;
-        // console.log(newDetails);
         const jobId = req.params.id;
         await jobDetailCollection.updateOne({ _id: jobId }, {
             $set: {
@@ -163,7 +162,7 @@ const editJob = async (req, res) => {
 
     }
     catch (err) {
-        res.send(`Error in edit JOb, ${editJob}`);
+        res.status(400).send(`Error in edit JOb, ${editJob}`);
     }
 }
 
