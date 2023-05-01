@@ -8,7 +8,7 @@
 - Recruiters need to register themselves before posting any new job. They can login and post new jobs,
   also they can edit or delete the jobs posted by them.
 - Developers can view jobs, search jobs based on position and also filter jobs based on skills.
-- All the jobs with be shown with job position, salary, remote or office, fulltime/part-time and location. Clicking on job card will redirect to detailed job description.
+- All the jobs will be shown with job position, salary, remote or office, fulltime/part-time and location. Clicking on job card will redirect to detailed job description.
 
 ## Topics I touched while building it: 
 - Password Hashing: Used bcrypt for hashing password.
